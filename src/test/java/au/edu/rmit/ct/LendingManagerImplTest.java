@@ -99,23 +99,23 @@ class LendingManagerImplTest
     void borrowBook2()
     {
         LibraryRecord record = lendingManager.borrowBook(bookList.get(bookIdx));
-        assertEquals(null,record.getId(),
+        assertNull(record.getId(),
                 "We didn't set the ID for the record in borrowBook, so it should be null!");
         print("Checking for null record ID passed!");
 
-        assertEquals(null, record.getBook().getName(),
+        assertNull( record.getBook().getName(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book name passed!");
 
-        assertEquals(null, record.getBook().getAuthors(),
+        assertNull( record.getBook().getAuthors(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book authors passed!");
 
-        assertEquals(null, record.getBook().getPublisher(),
+        assertNull( record.getBook().getPublisher(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book publisher passed!");
 
-        assertEquals(null, record.getBook().getPublicationDate(),
+        assertNull( record.getBook().getPublicationDate(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book publication date passed!");
     }
@@ -127,7 +127,7 @@ class LendingManagerImplTest
     {
         LibraryRecord record = lendingManager.borrowBook(bookList.get(bookIdx));
 
-        assertNotEquals(null, record.getBorrowingDate(),
+        assertNotNull(record.getBorrowingDate(),
                 "The borrowing date should not be null");
         print("Checking for not null record borrowing date passed!");
 
@@ -135,7 +135,7 @@ class LendingManagerImplTest
                 "The borrowing date should be really close to the current date");
         print("Checking for correct record borrowing date passed!");
 
-        assertEquals(null, record.getReturningDate(),
+        assertNull( record.getReturningDate(),
                 "We haven't return the book yet, so the return date should be null");
         print("Checking for null record returning date passed!");
     }
@@ -222,23 +222,23 @@ class LendingManagerImplTest
                 "The book should have the same ISBN with the bookIdx");
         print("Checking for correct book ISBN passed!");
 
-        assertEquals(null,record.getId(),
+        assertNull(record.getId(),
                 "We didn't set the ID for the record in borrowBook, so it should be null!");
         print("Checking for null record ID passed!");
 
-        assertEquals(null, record.getBook().getName(),
+        assertNull( record.getBook().getName(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book name passed!");
 
-        assertEquals(null, record.getBook().getAuthors(),
+        assertNull( record.getBook().getAuthors(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book authors passed!");
 
-        assertEquals(null, record.getBook().getPublisher(),
+        assertNull( record.getBook().getPublisher(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book publisher passed!");
 
-        assertEquals(null, record.getBook().getPublicationDate(),
+        assertNull( record.getBook().getPublicationDate(),
                 "This value should be null because we only initialized ID and ISBN for the testing");
         print("Checking for null book publication date passed!");
 
@@ -250,15 +250,24 @@ class LendingManagerImplTest
                 "The borrowing date should be really close to the current date");
         print("Checking for correct book borrowing date passed!");
 
-        assertEquals(null, record.getReturningDate(),
+        assertNull( record.getReturningDate(),
                 "We haven't return the book yet, so the return date should be null");
         print("Checking for null book returning date passed!");
     }
 
     @Test
-    @DisplayName("returnBook: Testing for the book's ID and ISBN ")
+    @DisplayName("returnBook: Testing for returning a book that is not currently being borrowed")
     @Order(9)
     void returnBook1()
+    {
+       assertThrows(IllegalStateException.class,()->lendingManager.returnBook(bookList.get(bookIdx)),
+               "The book is not being borrowed by anyone, so an exception should be thrown");
+        print("Checking for exception thrown at returning an un-borrowed book passed!");
+    }
+    @Test
+    @DisplayName("returnBook: Testing for the book's ID and ISBN ")
+    @Order(10)
+    void returnBook2()
     {
         LibraryRecord record = lendingManager.borrowBook(bookList.get(bookIdx));
         record = lendingManager.returnBook(bookList.get(bookIdx));
