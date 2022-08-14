@@ -15,19 +15,25 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
-class LendingManagerImplTest {
-    private static LendingManagerImpl lendingManager = new LendingManagerImpl();
-    private static List<RMITLibraryItem> bookList = new ArrayList<RMITLibraryItem>();
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 
+class LendingManagerImplTest
+{
+    private static LendingManagerImpl lendingManager = new LendingManagerImpl();
+    private static List<RMITLibraryItem> bookList = new ArrayList<>();
+    private static RMITLibraryRecordsDAO dao = new RMITLibraryRecordsDAO();
+    private static int bookIdx;
+    static void print(String str)
+    {
+        System.out.println(str);
+    }
     @BeforeAll
-    static void setUpBeforeClass() throws Exception {
-        System.out.println("Setting up Before Class");
-        RMITLibraryRecordsDAO dao = new RMITLibraryRecordsDAO();
-        for (int i = 0; i <= 100; i++)
+    static void setUpExampleLibraryRecords() throws Exception
+    {
+        print("Setting up example Library Records before testing");
+        for (int i = 0; i < 100; i++)
         {
             LibraryRecord newRecord = new LibraryRecord();
             newRecord.setId(Integer.toUnsignedLong(i));
@@ -40,29 +46,189 @@ class LendingManagerImplTest {
             dao.save(newRecord);
         }
         lendingManager.setLibraryRecordDAO(dao);
+        print("------------------------------");
     }
+    @AfterAll
+    static void finishedAllTests() throws Exception
+    {
+        print("Finished all the tests. Terminating the program.");
+    }
+
+    @BeforeEach
+    void setUpRandomBookForTesting() throws Exception
+    {
+        print("Setting up before each test");
+        bookIdx = (new Random()).nextInt(bookList.size());
+        print("Generate a random book idx: " + bookIdx);
+        print("");
+    }
+
+
     @Test
-    @DisplayName("Testing for the borrowBook function")
-    void borrowBook1() {
-        int bookIdx = 15;
+    @DisplayName("borrowBook: Testing for the book's ID and ISBN")
+    @Order(1)
+    void borrowBook1()
+    {
+        LibraryRecord record = lendingManager.borrowBook(bookList.get(bookIdx));
+
+        assertEquals(Long.valueOf(bookIdx), record.getBook().getId());
+        print("Checking for correct book ID passed!");
+
+        assertEquals(String.valueOf(bookIdx),record.getBook().getISBN());
+        print("Checking for correct book ISBN passed!");
+
+        print("------------------------------");
+    }
+
+    @Test
+    @DisplayName("borrowBook: Testing for the record and book's null variables")
+    @Order(2)
+    void borrowBook2()
+    {
         LibraryRecord record = lendingManager.borrowBook(bookList.get(bookIdx));
         assertEquals(null,record.getId(), "We didn't set the ID for the record in borrowBook, so it should be null!");
-        assertEquals(Long.valueOf(bookIdx), record.getBook().getId());
-        assertEquals(String.valueOf(bookIdx),record.getBook().getISBN());
-        assertTrue((new Date().getTime() - record.getBorrowingDate().getTime()) < 1000,"The borrowing date should be really close to the current date");
-        assertEquals(null, record.getReturningDate(), "We haven't return the book yet, so the return date should be null");
+        print("Checking for null record ID passed!");
+
         assertEquals(null, record.getBook().getName(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book name passed!");
+
         assertEquals(null, record.getBook().getAuthors(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book authors passed!");
+
         assertEquals(null, record.getBook().getPublisher(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book publisher passed!");
+
         assertEquals(null, record.getBook().getPublicationDate(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book publication date passed!");
 
-
+        print("------------------------------");
     }
 
     @Test
-    @DisplayName("Example Display Name 2")
-    void returnBook1() {
-        fail("not implemented yet. Just an example test method.");
+    @DisplayName("borrowBook: Testing for the returning and the borrowing date of the record")
+    @Order(3)
+    void borrowBook3()
+    {
+        LibraryRecord record = lendingManager.borrowBook(bookList.get(bookIdx));
+
+        assertNotEquals(null, record.getBorrowingDate(), "The borrowing date should not be null");
+        print("Checking for not null record borrowing date passed!");
+
+        assertTrue((new Date().getTime() - record.getBorrowingDate().getTime()) < 1000,"The borrowing date should be really close to the current date");
+        print("Checking for correct record borrowing date passed!");
+
+        assertEquals(null, record.getReturningDate(), "We haven't return the book yet, so the return date should be null");
+        print("Checking for null record returning date passed!");
+
+        print("------------------------------");
+    }
+    @Test
+    @DisplayName("borrowBook: Testing for exception thrown when borrowing Book class instead of RMITLibraryItem")
+    @Order(4)
+    void borrowBook4()
+    {
+        Book book = new Book();
+        book.setId(Long.valueOf(bookIdx));
+        book.setISBN(String.valueOf(bookIdx));
+
+        assertThrows(IllegalArgumentException.class,() -> lendingManager.borrowBook(new Book()));
+        print("Checking for exception thrown when passing wrong class passed!");
+
+        print("------------------------------");
+    }
+    @Test
+    @DisplayName("borrowBook: Testing for exception thrown when empty returning and borrowing date")
+    @Order(5)
+    void borrowBook5()
+    {
+        RMITLibraryRecordsDAO newDao = dao;
+        LendingManagerImpl newLendingManager = new LendingManagerImpl();
+        RMITLibraryItem newBook = new RMITLibraryItem(100L, "100");
+        LibraryRecord newRecord = new LibraryRecord();
+        newRecord.setId(100L);
+        newRecord.setBook(newBook);
+        newDao.save(newRecord);
+        newLendingManager.setLibraryRecordDAO(newDao);
+        assertThrows(IllegalStateException.class,()->newLendingManager.borrowBook(newBook), "This book is having null borrowing date, so there should be an exception");
+        print("Checking for exception thrown at null borrowing date passed!");
+
+        assertThrows(IllegalStateException.class,()->newLendingManager.borrowBook(newBook), "This book is having null returning date, so there should be an exception");
+        print("Checking for exception thrown at null returning date passed!");
+
+        print("------------------------------");
+    }
+    @Test
+    @DisplayName("borrowBook: Testing for exception thrown when multiple empty returning dates")
+    @Order(6)
+    void borrowBook6()
+    {
+        RMITLibraryRecordsDAO newDao = dao;
+        LendingManagerImpl newLendingManager = new LendingManagerImpl();
+        RMITLibraryItem newBook = new RMITLibraryItem(100L, "100");
+        for(int i = 1; i <= 5; i++)
+        {
+            LibraryRecord newRecord = new LibraryRecord();
+            newRecord.setId(100L + i);
+            newRecord.setBook(newBook);
+            newRecord.setBorrowingDate(new Date());
+            newDao.save(newRecord);
+        }
+        newLendingManager.setLibraryRecordDAO(newDao);
+        assertThrows(IllegalStateException.class,()->newLendingManager.borrowBook(newBook), "This book is having multiple empty returning dates");
+        print("Checking for exception thrown at multiple null returning dates passed!");
+
+        print("------------------------------");
+    }
+    @Test
+    @DisplayName("borrowBook: Testing for borrow a new book that is not existed in the RMITLibraryRecordsDAO")
+    @Order(7)
+    void borrowBook7()
+    {
+        int newBookIdx = bookIdx + bookList.size();
+        RMITLibraryItem newBook = new RMITLibraryItem(Long.valueOf(newBookIdx), String.valueOf(newBookIdx));
+        LibraryRecord record = lendingManager.borrowBook(newBook);
+
+        assertEquals(Long.valueOf(newBookIdx), record.getBook().getId());
+        print("Checking for correct book ID passed!");
+
+        assertEquals(String.valueOf(newBookIdx),record.getBook().getISBN());
+        print("Checking for correct book ISBN passed!");
+
+        assertEquals(null,record.getId(), "We didn't set the ID for the record in borrowBook, so it should be null!");
+        print("Checking for null record ID passed!");
+
+        assertEquals(null, record.getBook().getName(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book name passed!");
+
+        assertEquals(null, record.getBook().getAuthors(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book authors passed!");
+
+        assertEquals(null, record.getBook().getPublisher(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book publisher passed!");
+
+        assertEquals(null, record.getBook().getPublicationDate(), "This value should be null because we only initialized ID and ISBN for the testing");
+        print("Checking for null book publication date passed!");
+
+        assertNotEquals(null, record.getBorrowingDate(), "The borrowing date should not be null");
+        print("Checking for not null book borrowing date passed!");
+
+        assertTrue((new Date().getTime() - record.getBorrowingDate().getTime()) < 1000,"The borrowing date should be really close to the current date");
+        print("Checking for correct book borrowing date passed!");
+
+        assertEquals(null, record.getReturningDate(), "We haven't return the book yet, so the return date should be null");
+        print("Checking for null book returning date passed!");
+
+        print("------------------------------");
+    }
+
+    @Test
+    @DisplayName("returnBook: ")
+    @Order(8)
+    void returnBook1()
+    {
+        LibraryRecord record = lendingManager.returnBook(bookList.get(bookIdx));
+
+        print("------------------------------");
     }
 
 }
